@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Burner Status Dashboard</title>
+
+  <!-- Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      padding: 15px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .cards {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .card {
+      background: white;
+      padding: 15px;
+      width: 140px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .on { color: green; font-weight: bold; }
+    .off { color: red; font-weight: bold; }
+
+    .chart-box {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      font-size: 12px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 5px;
+      text-align: center;
+    }
+
+    th {
+      background: #0077b6;
+      color: white;
+      position: sticky;
+      top: 0;
+    }
+
+    .table-container {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>🔥 Burner Status Dashboard</h1>
+
+<div class="cards">
+  <div class="card">
+    <h3>Total</h3>
+    <h2 id="total">0</h2>
+  </div>
+  <div class="card">
+    <h3>ON</h3>
+    <h2 class="on" id="on">0</h2>
+  </div>
+  <div class="card">
+    <h3>OFF</h3>
+    <h2 class="off" id="off">0</h2>
+  </div>
+</div>
+
+<div class="chart-box">
+  <canvas id="statusChart"></canvas>
+</div>
+
+<div class="table-container">
+  <table id="table"></table>
+</div>
+
+<script>
+let chart;
+
+function loadDashboard() {
+  fetch("Burner status 10 Jan 2026.xlsx")
+    .then(res => res.arrayBuffer())
+    .then(data => {
+      const wb = XLSX.read(data, { type: "array" });
+      const sheet = wb.Sheets["BURNER STATUS"];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+      let on = 0, off = 0;
+      let html = "<tr>";
+
+      rows[3].forEach(h => html += `<th>${h || ""}</th>`);
+      html += "</tr>";
+
+      for (let i = 4; i < rows.length; i++) {
+        html += "<tr>";
+        rows[i].forEach(c => {
+          if (c === "O") {
+            on++;
+            html += `<td class="on">O</td>`;
+          } else if (c === "N") {
+            off++;
+            html += `<td class="off">N</td>`;
+          } else {
+            html += `<td>${c || ""}</td>`;
+          }
+        });
+        html += "</tr>";
+      }
+
+      document.getElementById("table").innerHTML = html;
+      document.getElementById("on").innerText = on;
+      document.getElementById("off").innerText = off;
+      document.getElementById("total").innerText = on + off;
+
+      drawChart(on, off);
+    });
+}
+
+function drawChart(on, off) {
+  const ctx = document.getElementById("statusChart");
+
+  if (chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type: "pie",
+    data: {
+      labels: ["ON", "OFF"],
+      datasets: [{
+        data: [on, off],
+        backgroundColor: ["green", "red"]
+      }]
+    }
+  });
+}
+
+loadDashboard();
+setInterval(loadDashboard, 30000); // auto refresh every 30 sec
+</script>
+
+</body>
+</html>
