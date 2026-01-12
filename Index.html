@@ -104,11 +104,15 @@
 let chart;
 
 function loadDashboard() {
-  fetch("Burner_status.xlsx")
-    .then(res => res.arrayBuffer())
+  fetch("burner_status.xlsx")
+    .then(res => {
+      if (!res.ok) throw new Error("Excel not found");
+      return res.arrayBuffer();
+    })
     .then(data => {
       const wb = XLSX.read(data, { type: "array" });
-      const sheet = wb.Sheets["BURNER STATUS"];
+      const sheetName = wb.SheetNames[0];
+      const sheet = wb.Sheets[sheetName];
       const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
       let on = 0, off = 0;
@@ -122,10 +126,10 @@ function loadDashboard() {
         rows[i].forEach(c => {
           if (c === "O") {
             on++;
-            html += `<td class="on">O</td>`;
+            html += `<td style="color:green;font-weight:bold">O</td>`;
           } else if (c === "N") {
             off++;
-            html += `<td class="off">N</td>`;
+            html += `<td style="color:red;font-weight:bold">N</td>`;
           } else {
             html += `<td>${c || ""}</td>`;
           }
@@ -139,12 +143,17 @@ function loadDashboard() {
       document.getElementById("total").innerText = on + off;
 
       drawChart(on, off);
+    })
+    .catch(err => {
+      document.body.innerHTML =
+        "<h2 style='color:red;text-align:center'>Dashboard Error</h2><p style='text-align:center'>" +
+        err.message +
+        "</p>";
     });
 }
 
 function drawChart(on, off) {
   const ctx = document.getElementById("statusChart");
-
   if (chart) chart.destroy();
 
   chart = new Chart(ctx, {
@@ -160,9 +169,10 @@ function drawChart(on, off) {
 }
 
 loadDashboard();
-setInterval(loadDashboard, 30000); // auto refresh every 30 sec
 </script>
+
 
 </body>
 </html>
+
 
