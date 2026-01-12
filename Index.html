@@ -104,7 +104,7 @@
 let chart;
 
 function loadDashboard() {
-  fetch("Burner status 10 Jan 2026.xlsx")
+  fetch("Burner_status.xlsx")
     .then(res => res.arrayBuffer())
     .then(data => {
       const wb = XLSX.read(data, { type: "array" });
@@ -165,3 +165,4 @@ setInterval(loadDashboard, 30000); // auto refresh every 30 sec
 
 </body>
 </html>
+
